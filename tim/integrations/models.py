@@ -12,3 +12,11 @@ class Integration(models.Model):
     service = models.TextField(choices=SERVICE_CHOICES)
     configuration = models.TextField()
     authentication = models.TextField()
+
+    def connect(self):
+        return integrators.load_integration(
+            self.service,
+            json.loads(self.configuration),
+            json.loads(self.authentication),
+        )
+

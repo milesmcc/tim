@@ -9,6 +9,10 @@ black = "*"
 
 [packages]
 django = "*"
+requests = "*"
+python-dateutil = "*"
+pytimeparse = "*"
+celery = "*"
 
 [requires]
 python_version = "3.8"

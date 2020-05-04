@@ -1,0 +1,1 @@
+FLAGS = ["p1", "p2", "p3", "p4", "easy", "medium", "hard", "morning", "afternoon", "evening", "daytime", "night", "deadline"]
