@@ -1,11 +1,15 @@
-from .base import Integrator
-from scheduling.models import Block
-from ics import Calendar, Event, parse
-from django.utils.timezone import datetime, timedelta, timezone, is_aware, make_aware
-from dateutil.parser import parse as parse_time
-from pytimeparse import parse as parse_duration
-import requests
 import logging
+
+import requests
+from dateutil.parser import parse as parse_time
+from django.utils.timezone import (datetime, is_aware, make_aware, timedelta,
+                                   timezone)
+from ics import Calendar, Event, parse
+from pytimeparse import parse as parse_duration
+
+from scheduling.models import Block
+
+from .base import Integrator
 
 
 def _is_busy(event: Event):

@@ -1,14 +1,17 @@
-from django.db import models
-from django.utils.timezone import datetime, timedelta, now
-from pytz import timezone
-from datetime import time
-from accounts.models import User
 import logging
 import uuid
+from datetime import time
+
+from django.db import models
+from django.utils.timezone import datetime, now, timedelta
+from pytz import timezone
+
+from accounts.models import User
 
 
 def _default_uuid():
     return uuid.uuid4()
+
 
 class Block:  # Not stored in database
     start: datetime = None
@@ -198,7 +201,13 @@ class Event(models.Model):
         )
 
         if self.is_ongoing():
-            reschedule_after = self.schedule.get_timezone().normalize((self.scheduled + self.get_duration() + self.schedule.get_reschedule_delay()))
+            reschedule_after = self.schedule.get_timezone().normalize(
+                (
+                    self.scheduled
+                    + self.get_duration()
+                    + self.schedule.get_reschedule_delay()
+                )
+            )
             desc += f"This event is currently ongoing. It will not be rescheduled unless it remains incomplete at {reschedule_after.strftime('%-I:%M %p')}."
 
         if self.completed:

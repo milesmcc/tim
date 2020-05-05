@@ -1,7 +1,8 @@
-from .todoist import TodoistIntegrator
-from .ics import IcsIntegrator
-from .gcal import GcalIntegrator
 from .base import IntegrationError
+from .gcal import GcalIntegrator
+from .ics import IcsIntegrator
+from .todoist import TodoistIntegrator
+
 
 def load_integration(name: str, configuration: dict, authentication: dict):
     if name == "todoist":

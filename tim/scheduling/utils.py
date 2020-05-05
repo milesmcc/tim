@@ -1,6 +1,9 @@
 from datetime import date, time
+
 from django.utils.timezone import datetime
+
 from .models import Block
+
 
 def find_availability(
     start: datetime, end: datetime, blocks: [Block]
@@ -24,4 +27,3 @@ def find_availability(
                     pass  # the availability and block are the same
 
     return available
-

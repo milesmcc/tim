@@ -1,11 +1,12 @@
-from datetime import timedelta, datetime, time
-from django.utils import timezone
-from .utils import find_availability
-from .models import Event, Schedule, Block
-from statistics import mean
-from django.db.models import Q
-
 import logging
+from datetime import datetime, time, timedelta
+from statistics import mean
+
+from django.db.models import Q
+from django.utils import timezone
+
+from .models import Block, Event, Schedule
+from .utils import find_availability
 
 
 def _viable_at(schedule: Schedule, start: datetime, end: datetime, event: Event):
@@ -40,7 +41,7 @@ def _priority_at(schedule: Schedule, start: datetime, event: Event) -> float:
     # starting at 1 and steadily increasing as the deadline approaches
     if event.deadline is not None:
         priority *= max(1, ((event.deadline - start).days + 14) / 7.0)
-    
+
     logging.debug(f"Priority for event {event} on {start} is {priority}.")
 
     return priority
@@ -96,7 +97,7 @@ def build_schedule(
 ) -> [Event]:
     # Builds a hypothetical schedule. Returns modified Event objects.
     # Save them to commit to the schedule.
-    for event in Event.objects.filter( # Currently ongoing
+    for event in Event.objects.filter(  # Currently ongoing
         Q(schedule=schedule, completed=False, scheduled__lte=start)
     ):
         if event.is_ongoing():

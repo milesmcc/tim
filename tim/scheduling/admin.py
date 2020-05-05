@@ -14,7 +14,7 @@ class EventAdmin(admin.ModelAdmin):
         "duration",
         "completed",
         "source",
-        "recurrence_id"
+        "recurrence_id",
     ]
     search_fields = ["schedule", "schedule.user", "content", "contexts", "flags"]
     list_filter = ["completed", "scheduled"]

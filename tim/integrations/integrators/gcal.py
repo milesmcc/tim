@@ -1,21 +1,18 @@
-from .base import Integrator
-from scheduling.models import Block, Event
-from django.utils.timezone import (
-    datetime,
-    timedelta,
-    timezone,
-    is_aware,
-    make_aware,
-    now,
-)
-from dateutil.parser import parse as parse_time
-from googleapiclient.discovery import build
-from google_auth_oauthlib.flow import InstalledAppFlow
-from google.auth.transport.requests import Request
-from google.auth.credentials import Credentials
-import pickle
 import base64
 import logging
+import pickle
+
+from dateutil.parser import parse as parse_time
+from django.utils.timezone import (datetime, is_aware, make_aware, now,
+                                   timedelta, timezone)
+from google.auth.credentials import Credentials
+from google.auth.transport.requests import Request
+from google_auth_oauthlib.flow import InstalledAppFlow
+from googleapiclient.discovery import build
+
+from scheduling.models import Block, Event
+
+from .base import Integrator
 
 
 def _get(obj, path):

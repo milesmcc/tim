@@ -1,14 +1,18 @@
-from .base import Integrator
-from scheduling.models import Event
-from scheduling import FLAGS
-from django.utils.timezone import datetime, timedelta, timezone, is_aware, make_aware
-from dateutil.parser import parse as parse_time
-from pytimeparse import parse as parse_duration
-from hashlib import sha1
 import json
-import re
-import requests
 import logging
+import re
+from hashlib import sha1
+
+import requests
+from dateutil.parser import parse as parse_time
+from django.utils.timezone import (datetime, is_aware, make_aware, timedelta,
+                                   timezone)
+from pytimeparse import parse as parse_duration
+
+from scheduling import FLAGS
+from scheduling.models import Event
+
+from .base import Integrator
 
 API_ROOT = "https://api.todoist.com/sync/v8/"
 
@@ -103,7 +107,8 @@ class TodoistIntegrator(Integrator):
                     self._label_name(label)
                     for label in item["labels"]
                     if self._label_name(label) in FLAGS
-                ] + [f"p{5 - item['priority']}"]
+                ]
+                + [f"p{5 - item['priority']}"]
             )
 
             # Find contexts

@@ -1,8 +1,11 @@
-from django.db import models
-from django.core.exceptions import ValidationError
-from scheduling.models import Schedule
-from . import integrators
 import json
+
+from django.core.exceptions import ValidationError
+from django.db import models
+
+from scheduling.models import Schedule
+
+from . import integrators
 
 
 def _validate_json(value):

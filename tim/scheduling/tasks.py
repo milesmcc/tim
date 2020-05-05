@@ -1,17 +1,22 @@
-from celery import shared_task
-from .models import Block, Schedule, Event
-from integrations.models import Integration
-from .scheduler import build_schedule
-from datetime import datetime, timedelta
-from django.utils.timezone import now
-from integrations.integrators.base import Integrator
-from .utils import find_availability
 import logging
+from datetime import datetime, timedelta
+
+from celery import shared_task
+from django.utils.timezone import now
+
+from integrations.integrators.base import Integrator
+from integrations.models import Integration
+
+from .models import Block, Event, Schedule
+from .scheduler import build_schedule
+from .utils import find_availability
+
 
 @shared_task
 def update_all_schedules():
     for schedule in Schedule.objects.all():
         update_schedule.delay(schedule.pk)
+
 
 @shared_task
 def update_schedule(schedule_pk: str):

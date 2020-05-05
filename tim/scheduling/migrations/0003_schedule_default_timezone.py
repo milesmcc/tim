@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('scheduling', '0002_event_content'),
+        ("scheduling", "0002_event_content"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='schedule',
-            name='default_timezone',
-            field=models.TextField(default='America/New_York'),
+            model_name="schedule",
+            name="default_timezone",
+            field=models.TextField(default="America/New_York"),
         ),
     ]

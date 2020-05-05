@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('scheduling', '0007_auto_20200504_2124'),
+        ("scheduling", "0007_auto_20200504_2124"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='schedule',
-            name='reschedule_after',
+            model_name="schedule",
+            name="reschedule_after",
             field=models.IntegerField(default=30),
         ),
     ]
