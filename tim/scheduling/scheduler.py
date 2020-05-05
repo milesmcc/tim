@@ -100,22 +100,11 @@ def build_schedule(
         Event.objects.filter(
             Q(schedule=schedule, completed=False)
             & (Q(inception=None) | Q(inception__lt=end))
+            & (Q(scheduled=None) | Q(scheduled__gte=start))
         ),
         key=lambda k: _priority_at(schedule, end, k),
         reverse=True,
     )
-    for event in events:
-        if event.scheduled is not None and event.scheduled <= timezone.now():
-            expected_end = event.scheduled
-            if event.get_duration() is not None:
-                expected_end += event.get_duration()
-            if (
-                expected_end + timedelta(minutes=schedule.reschedule_after)
-                > timezone.now()
-            ):
-                logging.debug(f"Not rescheduling {event.content}, currently ongoing...")
-                events.remove(event)
-                blocks.append(Block(event.scheduled, expected_end))
 
     scheduled: [Event] = []
     unschedulable: [Event] = []

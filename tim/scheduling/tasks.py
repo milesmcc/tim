@@ -21,7 +21,6 @@ def update_schedule(schedule_pk: str):
     ]
     logging.debug("Connected to all integrations!")
 
-    # Load all events from integrations & synchronize internal state
     logging.debug(f"Loading events from integrations...")
     incoming_events = []
     for integrator in integrators:
@@ -31,8 +30,16 @@ def update_schedule(schedule_pk: str):
     logging.debug(
         f"Loaded {len(incoming_events)} events from integrations. Synchronizing..."
     )
-    Event.process_integration_events(schedule, incoming_events)
+    schedule.process_integration_events(incoming_events)
     logging.debug("Synchronized events!")
+
+    logging.debug("Bumping overdue events...")
+    schedule.clear_overdue_events()
+    logging.debug("Overdue events bumped!")
+
+    logging.debug("Clearing scheduled times of future completed events...")
+    schedule.clear_future_completed_events()
+    logging.debug("Future completed events cleared!")
 
     # Load blocks from integrations
     logging.debug("Loading blocks from integrations...")

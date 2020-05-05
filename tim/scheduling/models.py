@@ -3,6 +3,7 @@ from django.utils.timezone import datetime, timedelta, now
 from pytz import timezone
 from datetime import time
 from accounts.models import User
+import logging
 import uuid
 
 
@@ -25,7 +26,7 @@ class Schedule(models.Model):
     start_day_at = models.TimeField(default=time(hour=7))
     end_day_at = models.TimeField(default=time(hour=22))
     days_of_week = models.TextField(default="Mon Tue Wed Thu Fri Sat Sun")
-    reschedule_after = models.IntegerField(default=30)
+    reschedule_after = models.IntegerField(default=1800)
 
     def __str__(self):
         return f"{self.user} (#{self.pk})"
@@ -48,6 +49,46 @@ class Schedule(models.Model):
             )
 
         return (start, end)
+
+    def process_integration_events(self, incoming_events):
+        events = list(self.event_set.all())
+        # TODO: only deal with events from the last month or so to keep this small
+        for event in incoming_events:
+            try:
+                existing_index = [event.source_id for event in events].index(
+                    event.source_id
+                )
+                events[existing_index].update_from(event)
+            except ValueError:
+                events.append(event)
+
+            # Mark older events with the same recurrence id as completed
+            if event.recurrence_id != "":
+                for old_event in [
+                    old_event
+                    for old_event in events
+                    if old_event.recurrence_id == event.recurrence_id
+                    and old_event.source_id != event.source_id
+                ]:
+                    old_event.completed = True
+        for event in events:
+            event.schedule = self
+            event.save()
+
+    def clear_overdue_events(self):
+        overdue_candidates = self.event_set.filter(
+            scheduled__lte=now(), completed=False
+        )
+        for candidate in overdue_candidates:
+            if candidate.is_overdue():
+                logging.debug(f"Event {candidate} is overdue, bumping off old time...")
+                candidate.scheduled = None
+                candidate.save()
+
+    def clear_future_completed_events(self):
+        self.event_set.filter(
+            scheduled__gt=now(), completed=True
+        ).update(scheduled=None)
 
 
 class Event(models.Model):
@@ -94,6 +135,14 @@ class Event(models.Model):
     def get_contexts(self) -> [str]:
         return set(self.contexts.lower().split())
 
+    def is_overdue(self) -> bool:
+        if self.scheduled is None:
+            return False
+        expected_end = self.scheduled
+        if self.get_duration() is not None:
+            expected_end += self.get_duration()
+        return expected_end + timedelta(seconds=self.schedule.reschedule_after) < now()
+
     def update_from(self, other):
         update_fields = [
             "content",
@@ -115,32 +164,6 @@ class Event(models.Model):
                 # If the field on the other event is different and isn't the default,
                 # update self.
                 setattr(self, field, getattr(other, field))
-
-    @classmethod
-    def process_integration_events(cls, schedule: Schedule, incoming_events):
-        incoming_events: [cls] = incoming_events
-        events = list(cls.objects.filter(schedule=schedule))
-        for event in incoming_events:
-            try:
-                existing_index = [event.source_id for event in events].index(
-                    event.source_id
-                )
-                events[existing_index].update_from(event)
-            except ValueError:
-                events.append(event)
-
-            # Mark older events with the same recurrence id as completed
-            if event.recurrence_id != "":
-                for old_event in [
-                    old_event
-                    for old_event in events
-                    if old_event.recurrence_id == event.recurrence_id
-                    and old_event.source_id != event.source_id
-                ]:
-                    old_event.completed = True
-        for event in events:
-            event.schedule = schedule
-            event.save()
 
 
 class Block:  # Not stored in database
