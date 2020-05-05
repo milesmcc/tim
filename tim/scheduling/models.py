@@ -1,7 +1,10 @@
 from django.db import models
-from django.utils.timezone import datetime
+from django.utils.timezone import datetime, timedelta, now
+from pytz import timezone
+from datetime import time
 from accounts.models import User
 import uuid
+
 
 def _default_uuid():
     return uuid.uuid4()
@@ -19,9 +22,32 @@ class Schedule(models.Model):
         choices=RESCHEDULING_CHOICES, default="EFFICIENCY"
     )
     default_timezone = models.TextField(default="America/New_York")
+    start_day_at = models.TimeField(default=time(hour=7))
+    end_day_at = models.TimeField(default=time(hour=22))
+    days_of_week = models.TextField(default="Mon Tue Wed Thu Fri Sat Sun")
+    reschedule_after = models.IntegerField(default=30)
 
     def __str__(self):
         return f"{self.user} (#{self.pk})"
+
+    def get_timezone(self):
+        return timezone(self.default_timezone)
+
+    def get_current_scheduling_block(self) -> (datetime, datetime):
+        tz = self.get_timezone()
+        rn = tz.normalize(now())
+        start = max(rn, tz.localize(datetime.combine(rn.date(), self.start_day_at)))
+        end = tz.localize(datetime.combine(rn.date(), self.end_day_at))
+        if rn.time() >= self.end_day_at:
+            # The end time has passed; time to schedule tomorrow
+            start = tz.localize(
+                datetime.combine(rn.date(), self.start_day_at)
+            ) + timedelta(days=1)
+            end = tz.localize(datetime.combine(rn.date(), self.end_day_at)) + timedelta(
+                days=1
+            )
+
+        return (start, end)
 
 
 class Event(models.Model):
@@ -36,7 +62,7 @@ class Event(models.Model):
     content = models.TextField(blank=True, default="")
     inception = models.DateTimeField(null=True, blank=True)
     deadline = models.DateTimeField(null=True, blank=True)
-    duration = models.IntegerField(null=True, blank=True) # seconds
+    duration = models.IntegerField(null=True, blank=True)  # seconds
     completed = models.BooleanField(default=False)
     flags = models.TextField(blank=True)
     contexts = models.TextField(blank=True)
@@ -54,6 +80,20 @@ class Event(models.Model):
     class Meta:
         unique_together = [("schedule", "source_id")]
 
+    def get_duration(self) -> timedelta:
+        if self.duration is None:
+            return None
+        return timedelta(seconds=self.duration)
+
+    def get_flags(self) -> [str]:
+        return set(self.flags.lower().split())
+
+    def has_flag(self, flag: str) -> bool:
+        return flag.lower() in self.get_flags()
+
+    def get_contexts(self) -> [str]:
+        return set(self.contexts.lower().split())
+
     def update_from(self, other):
         update_fields = [
             "content",
@@ -63,6 +103,9 @@ class Event(models.Model):
             "completed",
             "flags",
             "contexts",
+            "source_metadata",
+            "recurrence_id",
+            "source_url",
         ]
 
         for field in update_fields:
@@ -73,6 +116,32 @@ class Event(models.Model):
                 # update self.
                 setattr(self, field, getattr(other, field))
 
+    @classmethod
+    def process_integration_events(cls, schedule: Schedule, incoming_events):
+        incoming_events: [cls] = incoming_events
+        events = list(cls.objects.filter(schedule=schedule))
+        for event in incoming_events:
+            try:
+                existing_index = [event.source_id for event in events].index(
+                    event.source_id
+                )
+                events[existing_index].update_from(event)
+            except ValueError:
+                events.append(event)
+
+            # Mark older events with the same recurrence id as completed
+            if event.recurrence_id != "":
+                for old_event in [
+                    old_event
+                    for old_event in events
+                    if old_event.recurrence_id == event.recurrence_id
+                    and old_event.source_id != event.source_id
+                ]:
+                    old_event.completed = True
+        for event in events:
+            event.schedule = schedule
+            event.save()
+
 
 class Block:  # Not stored in database
     start: datetime = None
@@ -81,3 +150,9 @@ class Block:  # Not stored in database
     def __init__(self, start: datetime, end: datetime):
         self.start = start
         self.end = end
+
+    def contains(self, time: datetime) -> bool:
+        return time >= self.start and time <= self.end
+
+    def overlaps(self, start: datetime, end: datetime) -> bool:
+        return not (self.start >= end or self.end <= start)

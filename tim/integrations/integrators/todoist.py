@@ -13,7 +13,7 @@ import logging
 API_ROOT = "https://api.todoist.com/sync/v8/"
 
 
-class Todoist(Integrator):
+class TodoistIntegrator(Integrator):
     def __init__(self, configuration: dict, authentication: dict):
         logging.debug("Todoist integration connecting...")
         self.token = authentication["token"]
@@ -100,7 +100,7 @@ class Todoist(Integrator):
                     self._label_name(label)
                     for label in item["labels"]
                     if self._label_name(label) in FLAGS
-                ]
+                ] + [f"p{5 - item['priority']}"]
             )
 
             # Find contexts
@@ -124,7 +124,6 @@ class Todoist(Integrator):
         for item in self.completed:
             event = Event()
             event.completed = True
-            event.content = item["content"]
             self._apply_source_metadata(event, item)
             events.append(event)
         return events

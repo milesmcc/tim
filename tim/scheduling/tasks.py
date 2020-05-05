@@ -1,51 +1,54 @@
 from celery import shared_task
 from .models import Block, Schedule, Event
 from integrations.models import Integration
+from .scheduler import build_schedule
+from datetime import datetime, timedelta
 from integrations.integrators.base import Integrator
-
+from .utils import find_availability
 import logging
+
 
 @shared_task
 def update_schedule(schedule_pk: str):
-    print("task running")
     logging.debug(f"Loading schedule {schedule_pk}...")
 
     schedule: Schedule = Schedule.objects.get(pk=schedule_pk)
 
-    logging.debug(f"Found schedule. Loading known events...")
-    events: [Event] = list(Event.objects.filter(schedule=schedule))
-    logging.debug(f"Found {len(events)} events. Connecting integrations...")
+    logging.debug(f"Found schedule. Connecting integrations...")
     integrators: [Integrator] = [
         integration.connect()
         for integration in Integration.objects.filter(schedule=schedule)
     ]
     logging.debug("Connected to all integrations!")
 
-    # Load all events from integrations
+    # Load all events from integrations & synchronize internal state
+    logging.debug(f"Loading events from integrations...")
+    incoming_events = []
     for integrator in integrators:
-        for event in (
-            integrator.get_pending_events() + integrator.get_completed_events()
-        ):
-            # Update and/or insert event
-            try:
-                existing_index = [event.source_id for event in events].index(
-                    event.source_id
-                )
-                events[existing_index].update_from(event)
-            except ValueError:
-                events.append(event)
+        logging.debug(f"Synchonizing events from {type(integrator)}...")
+        incoming_events.extend(integrator.get_pending_events())
+        incoming_events.extend(integrator.get_completed_events())
+    logging.debug(
+        f"Loaded {len(incoming_events)} events from integrations. Synchronizing..."
+    )
+    Event.process_integration_events(schedule, incoming_events)
+    logging.debug("Synchronized events!")
 
-            # Mark older events with the same recurrence id as completed
-            if event.recurrence_id != "":
-                for old_event in [
-                    old_event
-                    for old_event in events
-                    if old_event.recurrence_id == event.recurrence_id
-                    and old_event.source_id != event.source_id
-                ]:
-                    old_event.completed = True
+    # Load blocks from integrations
+    logging.debug("Loading blocks from integrations...")
+    blocks = []
+    for integrator in integrators:
+        logging.debug(f"Synchonizing blocks from {type(integrator)}...")
+        blocks.extend(integrator.get_blocks())
+    logging.debug(f"Loaded {len(blocks)} blocks from integrations.")
 
-    # Save events
-    for event in events:
-        event.schedule = schedule
+    # Figure out the time period to schedule
+    start, end = schedule.get_current_scheduling_block()
+    logging.debug(f"Will build schedule between {start} and {end}...")
+    
+    # Build schedule
+    logging.debug("Building schedule...")
+    scheduling_results: [Event] = build_schedule(schedule, blocks, start, end)
+    for event in scheduling_results:
         event.save()
+    logging.debug("New schedule built and saved!")

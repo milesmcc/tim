@@ -13,6 +13,7 @@ requests = "*"
 python-dateutil = "*"
 pytimeparse = "*"
 celery = "*"
+ics = "*"
 
 [requires]
 python_version = "3.8"
