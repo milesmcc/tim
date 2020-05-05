@@ -135,6 +135,8 @@ class GcalIntegrator(Integrator):
             prefix = ""
             if event.completed:
                 prefix += "🔒"
+            if event.is_ongoing():
+                prefix += "⏳"
             if event.has_flag("deadline"):
                 prefix += "⏰"
             if event.has_flag("p1"):
@@ -157,7 +159,7 @@ class GcalIntegrator(Integrator):
                     "title": f"Via {event.source.capitalize()}, scheduled by Tim",
                     "url": event.source_url,
                 },
-                "description": f"{event.source_url}\n\nFlags: {', '.join(event.get_flags())}\nContexts: {', '.join(event.get_contexts())}",
+                "description": event.get_description(),
                 "transparency": "transparent",
             }
 

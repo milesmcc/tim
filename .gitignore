@@ -2,6 +2,7 @@
 .vscode/
 google_creds.json
 secrets.yml
+compiledstatic/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

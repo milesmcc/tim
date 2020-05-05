@@ -10,6 +10,26 @@ import uuid
 def _default_uuid():
     return uuid.uuid4()
 
+class Block:  # Not stored in database
+    start: datetime = None
+    end: datetime = None
+
+    def __init__(self, start: datetime, end: datetime, buffer: timedelta = None):
+        if buffer is None:
+            buffer = timedelta()
+
+        self.start = start - buffer
+        self.end = end + buffer
+
+    def __str__(self):
+        return f"{self.start.isoformat()} - {self.end.isoformat()}"
+
+    def contains(self, time: datetime) -> bool:
+        return time >= self.start and time <= self.end
+
+    def overlaps(self, start: datetime, end: datetime) -> bool:
+        return not (self.start >= end or self.end <= start)
+
 
 class Schedule(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -30,6 +50,9 @@ class Schedule(models.Model):
 
     def __str__(self):
         return f"{self.user} (#{self.pk})"
+
+    def get_reschedule_delay(self) -> timedelta:
+        return timedelta(seconds=self.reschedule_after)
 
     def get_timezone(self):
         return timezone(self.default_timezone)
@@ -90,14 +113,16 @@ class Schedule(models.Model):
             completed=False, scheduled__isnull=False, inception__isnull=False
         ):
             if event.scheduled < event.inception:
-                logging.debug(f"Event {event} was scheduled before its inception, bumping off old time...")
+                logging.debug(
+                    f"Event {event} was scheduled before its inception, bumping off old time..."
+                )
                 event.scheduled = None
                 event.save()
 
     def clear_future_completed_events(self):
-        self.event_set.filter(
-            scheduled__gt=now(), completed=True
-        ).update(scheduled=None)
+        self.event_set.filter(scheduled__gt=now(), completed=True).update(
+            scheduled=None
+        )
 
 
 class Event(models.Model):
@@ -144,6 +169,11 @@ class Event(models.Model):
     def get_contexts(self) -> [str]:
         return set(self.contexts.lower().split())
 
+    def get_blocks(self) -> [Block]:
+        if self.duration is None or self.duration == 0 or self.scheduled is None:
+            return []
+        return [Block(self.scheduled, self.scheduled + self.get_duration())]
+
     def is_overdue(self) -> bool:
         if self.scheduled is None:
             return False
@@ -151,6 +181,27 @@ class Event(models.Model):
         if self.get_duration() is not None:
             expected_end += self.get_duration()
         return expected_end + timedelta(seconds=self.schedule.reschedule_after) < now()
+
+    def is_ongoing(self) -> bool:
+        if self.scheduled is not None:
+            return now() > self.scheduled and not self.completed
+        return False
+
+    def get_description(self) -> str:
+        desc = (
+            f"{self.source_url}\n\n"
+            + f"Flags: {', '.join(self.get_flags())}\n"
+            + f"Contexts: {', '.join(self.get_contexts())}\n\n"
+        )
+
+        if self.is_ongoing():
+            reschedule_after = self.schedule.get_timezone().normalize((self.scheduled + self.get_duration() + self.schedule.get_reschedule_delay()))
+            desc += f"This event is currently ongoing. It will not be rescheduled unless it remains incomplete at {reschedule_after.strftime('%-I:%M %p')}."
+
+        if self.completed:
+            desc += f"This event is complete. These links may expire."
+
+        return desc.strip()
 
     def update_from(self, other):
         update_fields = [
@@ -173,24 +224,3 @@ class Event(models.Model):
                 # If the field on the other event is different and isn't the default,
                 # update self.
                 setattr(self, field, getattr(other, field))
-
-
-class Block:  # Not stored in database
-    start: datetime = None
-    end: datetime = None
-
-    def __init__(self, start: datetime, end: datetime, buffer: timedelta=None):
-        if buffer is None:
-            buffer = timedelta()
-
-        self.start = start - buffer
-        self.end = end + buffer
-
-    def __str__(self):
-        return f"{self.start.isoformat()} - {self.end.isoformat()}"
-
-    def contains(self, time: datetime) -> bool:
-        return time >= self.start and time <= self.end
-
-    def overlaps(self, start: datetime, end: datetime) -> bool:
-        return not (self.start >= end or self.end <= start)

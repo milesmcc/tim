@@ -96,6 +96,12 @@ def build_schedule(
 ) -> [Event]:
     # Builds a hypothetical schedule. Returns modified Event objects.
     # Save them to commit to the schedule.
+    for event in Event.objects.filter( # Currently ongoing
+        Q(schedule=schedule, completed=False, scheduled__lte=start)
+    ):
+        if event.is_ongoing():
+            blocks.extend(event.get_blocks())
+
     events: [Event] = sorted(
         Event.objects.filter(
             Q(schedule=schedule, completed=False)
@@ -128,7 +134,7 @@ def build_schedule(
             logging.debug(f"Scheduled event {event} for {best_time}.")
             event.scheduled = best_time
             if event.get_duration() is not None:
-                blocks.append(Block(best_time, best_time + event.get_duration()))
+                blocks.extend(event.get_blocks())
             scheduled.append(event)
         else:
             logging.debug(f"Unable to find a good time for {event}...")
