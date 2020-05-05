@@ -17,10 +17,11 @@ class IcsIntegrator(Integrator):
         self.url = configuration["url"]
         self.calendar = Calendar(requests.get(self.url).text)
 
-    def get_blocks(self):
+    def get_blocks(self, after: datetime = None, until: datetime = None):
         return [
             Block(event.begin.datetime, event.end.datetime)
             for event in self.calendar.events
             if _is_busy(event)
+            and (until is None or event.begin.datetime < until)
+            and (after is None or event.end.datetime > after)
         ]
-

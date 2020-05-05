@@ -3,6 +3,7 @@ from .models import Block, Schedule, Event
 from integrations.models import Integration
 from .scheduler import build_schedule
 from datetime import datetime, timedelta
+from django.utils.timezone import now
 from integrations.integrators.base import Integrator
 from .utils import find_availability
 import logging
@@ -41,6 +42,10 @@ def update_schedule(schedule_pk: str):
     schedule.clear_future_completed_events()
     logging.debug("Future completed events cleared!")
 
+    logging.debug("Unscheduling postponed events...")
+    schedule.unschedule_postponed_events()
+    logging.debug("Postponed events unscheduled!")
+
     # Load blocks from integrations
     logging.debug("Loading blocks from integrations...")
     blocks = []
@@ -52,10 +57,21 @@ def update_schedule(schedule_pk: str):
     # Figure out the time period to schedule
     start, end = schedule.get_current_scheduling_block()
     logging.debug(f"Will build schedule between {start} and {end}...")
-    
+
     # Build schedule
     logging.debug("Building schedule...")
     scheduling_results: [Event] = build_schedule(schedule, blocks, start, end)
     for event in scheduling_results:
         event.save()
     logging.debug("New schedule built and saved!")
+
+    # Publish schedule
+    logging.debug("Publishing schedule...")
+    events = list(schedule.event_set.filter(updated__gt=now() - timedelta(weeks=1)))
+    for integrator in integrators:
+        # Write all events that have recent changes. There's a week of buffer to
+        # deal with rescheduled old events, moved things, and other... potential
+        # problems.
+        logging.debug(f"Publishing schedule to {type(integrator)}...")
+        integrator.write_events(events)
+    logging.debug("Schedule published to all integrations!")

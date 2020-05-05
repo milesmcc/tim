@@ -34,3 +34,6 @@ class Integration(models.Model):
             json.loads(self.configuration),
             json.loads(self.authentication),
         )
+
+    def __str__(self):
+        return f"{self.schedule} on {self.get_service_display()}"

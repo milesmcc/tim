@@ -24,3 +24,4 @@ def find_availability(
                     pass  # the availability and block are the same
 
     return available
+

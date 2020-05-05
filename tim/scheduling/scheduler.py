@@ -13,7 +13,7 @@ def _viable_at(schedule: Schedule, start: datetime, end: datetime, event: Event)
         return False
     if event.inception is not None and event.inception > start:
         return False
-    if event.get_duration() is not None and event.get_duration() > (end - start):
+    if event.get_duration() is not None and start + event.get_duration() > end:
         return False
     return True
 
@@ -116,7 +116,7 @@ def build_schedule(
         highest_suitability = None
         for block_start, block_end in availability:
             while block_start < block_end:
-                if _viable_at(schedule, block_start, end, event):
+                if _viable_at(schedule, block_start, block_end, event):
                     suitability = _suitability_at(
                         schedule, block_start, scheduled, event
                     )

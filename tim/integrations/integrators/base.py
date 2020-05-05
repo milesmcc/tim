@@ -14,7 +14,7 @@ class Integrator:
     def get_completed_events(self, after: datetime=None) -> [Event]:
         return []
 
-    def get_blocks(self) -> [Block]:
+    def get_blocks(self, after: datetime=None, until: datetime=None) -> [Block]:
         return []
 
     def write_events(self, events: [Event]):

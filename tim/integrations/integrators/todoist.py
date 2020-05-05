@@ -45,7 +45,7 @@ class TodoistIntegrator(Integrator):
         for project in self.state["projects"]:
             if project["id"] == id:
                 if project["parent_id"] is not None:
-                    return [project["name"]] + self._project_names(project["parent_id"])
+                    return self._project_names(project["parent_id"]) + [project["name"]]
                 else:
                     return [project["name"]]
 
@@ -66,6 +66,9 @@ class TodoistIntegrator(Integrator):
 
             # Get name
             event.content = re.sub(r"\[.+\]\s?", "", item["content"]).strip()
+            project_names = self._project_names(item["project_id"])
+            if len(project_names) > 0:
+                event.content = project_names[-1] + " / " + event.content
 
             # Find & load times
             event.inception = parse_time(item["date_added"])

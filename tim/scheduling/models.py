@@ -85,6 +85,15 @@ class Schedule(models.Model):
                 candidate.scheduled = None
                 candidate.save()
 
+    def unschedule_postponed_events(self):
+        for event in self.event_set.filter(
+            completed=False, scheduled__isnull=False, inception__isnull=False
+        ):
+            if event.scheduled < event.inception:
+                logging.debug(f"Event {event} was scheduled before its inception, bumping off old time...")
+                event.scheduled = None
+                event.save()
+
     def clear_future_completed_events(self):
         self.event_set.filter(
             scheduled__gt=now(), completed=True
@@ -170,9 +179,15 @@ class Block:  # Not stored in database
     start: datetime = None
     end: datetime = None
 
-    def __init__(self, start: datetime, end: datetime):
-        self.start = start
-        self.end = end
+    def __init__(self, start: datetime, end: datetime, buffer: timedelta=None):
+        if buffer is None:
+            buffer = timedelta()
+
+        self.start = start - buffer
+        self.end = end + buffer
+
+    def __str__(self):
+        return f"{self.start.isoformat()} - {self.end.isoformat()}"
 
     def contains(self, time: datetime) -> bool:
         return time >= self.start and time <= self.end
