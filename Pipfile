@@ -22,6 +22,7 @@ google-auth-oauthlib = "*"
 oauth2client = "*"
 gunicorn = "*"
 psycopg2-binary = "*"
+rules = "*"
 
 [pipenv]
 allow_prereleases = false

@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rules',
     'accounts',
     'scheduling',
     'integrations',
@@ -155,6 +156,10 @@ LOGGING = {
 # Custom auth
 
 AUTH_USER_MODEL = "accounts.User"
+AUTHENTICATION_BACKENDS = (
+    'rules.permissions.ObjectPermissionBackend',
+    'django.contrib.auth.backends.ModelBackend',
+)
 
 # Celery
 
