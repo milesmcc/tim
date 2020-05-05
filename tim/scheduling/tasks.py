@@ -19,7 +19,16 @@ def update_schedule(schedule_pk: str):
 
     schedule: Schedule = Schedule.objects.get(pk=schedule_pk)
 
-    logging.debug(f"Found schedule. Connecting integrations...")
+    # Figure out the time period to schedule
+    schedule_block = schedule.get_current_scheduling_block()
+    if schedule_block is None:
+        logging.debug("No active scheduling block!")
+        return
+    else:
+        start, end = schedule_block
+    logging.debug(f"Found schedule. Will build schedule between {start} and {end}...")
+
+    logging.debug(f"Connecting integrations...")
     integrators: [Integrator] = [
         integration.connect()
         for integration in Integration.objects.filter(schedule=schedule)
@@ -57,10 +66,6 @@ def update_schedule(schedule_pk: str):
         logging.debug(f"Synchonizing blocks from {type(integrator)}...")
         blocks.extend(integrator.get_blocks())
     logging.debug(f"Loaded {len(blocks)} blocks from integrations.")
-
-    # Figure out the time period to schedule
-    start, end = schedule.get_current_scheduling_block()
-    logging.debug(f"Will build schedule between {start} and {end}...")
 
     # Build schedule
     logging.debug("Building schedule...")

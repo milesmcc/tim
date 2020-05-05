@@ -45,7 +45,7 @@ class Schedule(models.Model):
     default_timezone = models.TextField(default="America/New_York")
     start_day_at = models.TimeField(default=time(hour=7))
     end_day_at = models.TimeField(default=time(hour=22))
-    days_of_week = models.TextField(default="Mon Tue Wed Thu Fri Sat Sun")
+    days_of_week = models.TextField(default="1 2 3 4 5 6 7")
     reschedule_after = models.IntegerField(default=1800)
 
     def __str__(self):
@@ -70,6 +70,9 @@ class Schedule(models.Model):
             end = tz.localize(datetime.combine(rn.date(), self.end_day_at)) + timedelta(
                 days=1
             )
+
+        if not str(start.isoweekday()) in self.days_of_week.split():
+            return None
 
         return (start, end)
 
