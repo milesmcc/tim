@@ -44,6 +44,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -120,7 +121,9 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 
-STATIC_URL = '/static/'
+STATIC_URL = "/static/"
+STATIC_ROOT = "compiledstatic/"
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # Logging
 
@@ -145,3 +148,15 @@ AUTH_USER_MODEL = "accounts.User"
 # Celery
 
 CELERY_TASK_ALWAYS_EAGER = os.getenv("CELERY_TASK_ALWAYS_EAGER", "True") == "True"
+CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL")
+CELERY_REDIS_SOCKET_TIMEOUT = 15
+
+# Redis cache
+if not DEBUG and os.getenv("REDIS_CACHE_LOCATION") is not None:
+    CACHES = {
+        "default": {
+            "BACKEND": "redis_cache.RedisCache",
+            "LOCATION": os.getenv("REDIS_CACHE_LOCATION"),
+            "KEY_PREFIX": "v1_",  # Increment when migrations occur
+        }
+    }

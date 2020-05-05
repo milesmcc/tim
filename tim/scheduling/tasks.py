@@ -8,6 +8,10 @@ from integrations.integrators.base import Integrator
 from .utils import find_availability
 import logging
 
+@shared_task
+def update_all_schedules():
+    for schedule in Schedule.objects.all():
+        update_schedule.delay(schedule.pk)
 
 @shared_task
 def update_schedule(schedule_pk: str):

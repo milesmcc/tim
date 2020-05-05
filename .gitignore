@@ -1,6 +1,7 @@
 # Custom additions
 .vscode/
 google_creds.json
+secrets.yml
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

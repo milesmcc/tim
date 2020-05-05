@@ -5,22 +5,21 @@ verify_ssl = true
 
 [dev-packages]
 pylint = "*"
-black = "*"
+black = "==19.10b0"
 
 [packages]
 django = "*"
 requests = "*"
 python-dateutil = "*"
 pytimeparse = "*"
-celery = "*"
+whitenoise = "*"
+celery = {extras = ["redis"],version = "*"}
 ics = "*"
+django-redis-cache = "*"
 google-api-python-client = "*"
 google-auth-httplib2 = "*"
 google-auth-oauthlib = "*"
 oauth2client = "*"
 
-[requires]
-python_version = "3.8"
-
 [pipenv]
-allow_prereleases = true
+allow_prereleases = false

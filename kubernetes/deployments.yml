@@ -1,0 +1,111 @@
+apiVersion: "apps/v1"
+kind: "Deployment"
+metadata:
+  name: "tim-webserver"
+  namespace: "default"
+  labels:
+    app: "tim-webserver"
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: "tim-webserver"
+  template:
+    metadata:
+      labels:
+        app: "tim-webserver"
+    spec:
+      containers:
+      - name: "tim-webserver"
+        image: "gcr.io/core-infrastructure-274218/github.com/milesmcc/tim:latest"
+        imagePullPolicy: Always
+        envFrom:
+        - secretRef:
+            name: tim-settings
+---
+apiVersion: "apps/v1"
+kind: "Deployment"
+metadata:
+  name: "tim-celeryworker"
+  namespace: "default"
+  labels:
+    app: "tim-celeryworker"
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: "tim-celeryworker"
+  template:
+    metadata:
+      labels:
+        app: "tim-celeryworker"
+    spec:
+      containers:
+      - name: "tim-celeryworker"
+        image: "gcr.io/core-infrastructure-274218/github.com/milesmcc/tim:latest"
+        command: ["./celeryworker.sh"]
+        imagePullPolicy: Always
+        envFrom:
+        - secretRef:
+            name: tim-settings
+---
+apiVersion: "apps/v1"
+kind: "Deployment"
+metadata:
+  name: "tim-celerybeat"
+  namespace: "default"
+  labels:
+    app: "tim-celerybeat"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: "tim-celerybeat"
+  template:
+    metadata:
+      labels:
+        app: "tim-celerybeat"
+    spec:
+      containers:
+      - name: "tim-celerybeat"
+        image: "gcr.io/core-infrastructure-274218/github.com/milesmcc/tim:latest"
+        command: ["./celerybeat.sh"]
+        imagePullPolicy: Always
+        envFrom:
+        - secretRef:
+            name: tim-settings
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tim-redis
+spec:
+  ports:
+    - port: 6379
+      name: tim-redis
+  clusterIP: None
+  selector:
+    app: tim-redis
+---
+apiVersion: apps/v1beta2
+kind: StatefulSet
+metadata:
+  name: tim-redis
+spec:
+  selector:
+    matchLabels:
+      app: tim-redis
+  serviceName: tim-redis
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: tim-redis
+    spec:
+      containers:
+        - name: tim-redis
+          image: redis:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 6379
+              name: tim-redis
