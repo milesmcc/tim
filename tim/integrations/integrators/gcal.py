@@ -129,28 +129,28 @@ class GcalIntegrator(Integrator):
                     ).execute()
                 continue
 
-            prefix = ""
+            suffix = ""
             if event.completed:
-                prefix += "🔒"
+                suffix += "✅"
             if event.is_ongoing():
-                prefix += "⏳"
+                suffix += "⏳"
             if event.has_flag("deadline"):
-                prefix += "⏰"
+                suffix += "⏰"
             if event.has_flag("p1"):
-                prefix += "🔴"
+                suffix += "🔴"
             if event.has_flag("p2"):
-                prefix += "🟠"
+                suffix += "🟠"
             if event.has_flag("p3"):
-                prefix += "🟢"
+                suffix += "🟢"
             if event.has_flag("minor"):
-                prefix += "🤷"
+                suffix += "🤷"
 
             body = {
                 "start": {"dateTime": event.scheduled.isoformat()},
                 "end": {
                     "dateTime": (event.scheduled + event.get_duration()).isoformat()
                 },
-                "summary": f"{prefix} {event.content}".strip(),
+                "summary": f"{event.content} {suffix}".strip(),
                 "extendedProperties": {"private": {"sourceId": event.source_id,}},
                 "source": {
                     "title": f"Via {event.source.capitalize()}, scheduled by Tim",
