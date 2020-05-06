@@ -104,6 +104,18 @@ class Schedule(models.Model):
             event.schedule = self
             event.save()
 
+    def clear_conflicting_events(self, blocks: [Block]):
+        events = self.event_set.filter(completed=False, scheduled__isnull=False)
+        for event in events:
+            start = event.scheduled
+            end = start + (event.get_duration() or timedelta())
+            for block in blocks:
+                if block.overlaps(start, end):
+                    logging.debug(f"Event {event} overlaps with block, rescheduling...")
+                    event.scheduled = None
+                    event.save()
+                    break
+
     def clear_overdue_events(self):
         overdue_candidates = self.event_set.filter(
             scheduled__lte=now(), completed=False

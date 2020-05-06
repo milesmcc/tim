@@ -52,6 +52,17 @@ def update_schedule(schedule_pk: str):
     schedule.process_integration_events(incoming_events)
     logging.debug("Synchronized events!")
 
+    logging.debug("Loading blocks from integrations...")
+    blocks = []
+    for integrator in integrators:
+        logging.debug(f"Synchonizing blocks from {type(integrator)}...")
+        blocks.extend(integrator.get_blocks())
+    logging.debug(f"Loaded {len(blocks)} blocks from integrations.")
+
+    logging.debug("Clearing conflicting events...")
+    schedule.clear_conflicting_events(blocks)
+    logging.debug("Cleared conflicting")
+
     logging.debug("Bumping overdue events...")
     schedule.clear_overdue_events()
     logging.debug("Overdue events bumped!")
@@ -63,14 +74,6 @@ def update_schedule(schedule_pk: str):
     logging.debug("Unscheduling postponed events...")
     schedule.unschedule_postponed_events()
     logging.debug("Postponed events unscheduled!")
-
-    # Load blocks from integrations
-    logging.debug("Loading blocks from integrations...")
-    blocks = []
-    for integrator in integrators:
-        logging.debug(f"Synchonizing blocks from {type(integrator)}...")
-        blocks.extend(integrator.get_blocks())
-    logging.debug(f"Loaded {len(blocks)} blocks from integrations.")
 
     # Build schedule
     logging.debug("Building schedule...")
