@@ -1,0 +1,67 @@
+{% load static rules helpers %}
+<!DOCTYPE html>
+
+<html>
+
+<head>
+  <title>{% block head_title %}Automatic scheduling{% endblock %} | Tim</title>
+  <meta name="robots" content="noindex">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  {% include 'a17t/head.html' %}
+  <script src="https://cdn.jsdelivr.net/npm/litepicker@1.2.0/dist/js/main.js"
+    integrity="sha256-mOlCEHUNWZPYIrc5OFL4Ab2rsJGzIPld3cy1ok7Cfx0=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.18.1/dist/apexcharts.min.js"
+    integrity="sha256-RalQXBZdisB04aaBsm+6YZ0b/iRYjX1MZn90m19AnCY=" crossorigin="anonymous"></script>
+  {% block extra_head %}
+  {% endblock %}
+</head>
+
+<body class="bg-gray-200 min-h-full">
+  {% block body %}
+
+  <section class="max-w-screen-xl mx-auto px-4 py-4 md:py-12 md:flex">
+    <aside class="mb-8 md:w-2/12 md:pr-6 relative flex flex-wrap md:block justify-between items-center overflow-x-hidden">
+      <a class="icon ~urge ml-2 md:ml-6 md:mb-8 md:mt-3" href="{% url 'dashboard:dashboard' %}">
+        <i class="fas fa-binoculars fa-3x text-purple-600 hidden md:block"></i>
+        <i class="fas fa-binoculars fa-2x text-purple-600 md:hidden"></i>
+      </a>
+
+      <button class="button ~neutral !low md:hidden"
+        onclick="document.getElementById('navMenuExpanded').classList.toggle('hidden')">
+        <span class="icon">
+          <i class="fas fa-bars"></i>
+        </span>
+      </button>
+      <hr class="sep h-4 md:h-8 w-full">
+      <div id="navMenuExpanded"
+        class="bg-white shadow-lg md:shadow-none p-4 hidden rounded-lg md:block md:bg-transparent md:border-none md:p-0 w-full">
+        {% for user.schedule_set.all %}
+        <hr class="sep h-8">
+        {% endfor %}
+
+
+        {% sidebar_footer %}
+      </div>
+    </aside>
+    <div class="md:w-10/12">
+      {% if messages %}
+      <div>
+        {% for message in messages %}
+        <article class="card {{message.tags}} !high mb-2 w-full">{{message}}</article>
+        {% endfor %}
+        </ul>
+      </div>
+      <hr class="sep">
+      {% endif %}
+      <main>
+        {% block content %}
+        {% endblock %}
+      </main>
+    </div>
+  </section>
+  {% endblock %}
+  {% block extra_body %}
+  {% endblock %}
+</body>
+
+</html>

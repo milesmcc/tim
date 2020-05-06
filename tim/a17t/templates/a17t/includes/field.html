@@ -1,0 +1,51 @@
+{% load a17t_tags %}
+
+<field role="field" class="block mb-4">
+    {% if field|is_checkbox %}
+    <label class="switch {{ classes.label }}">
+        {{ field }}
+        <span>{{ field.label }}</span>
+    </label>
+    {% elif field|is_multiple_checkbox %}
+    {% if field.auto_id %}
+    <label class="label my-1" for="{{field.auto_id}}">{{ field.label }}</label>
+    {% endif %}
+    {% for choice in field %}
+    <label class="switch my-1 block">
+        {{ choice.tag }}
+        <span>{{ choice.choice_label }}</span>
+    </label>
+    {% endfor %}
+    {% elif field|is_radio %}
+    {% if field.auto_id %}
+    <label class="label block" for="{{field.auto_id}}">{{ field.label }}</label>
+    {% endif %}
+    {% for choice in field %}
+    <label class="switch my-1">
+        {{ choice.tag }}
+        <span>{{ choice.choice_label }}</span>
+    </label>
+    {% endfor %}
+    {% elif field|is_input %}
+    {% include 'a17t/includes/label.html' %}
+    {{field|add_class:"input my-1"}}
+    {% elif field|is_textarea %}
+    {% include 'a17t/includes/label.html' %}
+    {{ field|add_class:'textarea my-1' }}
+    {% elif field|is_select %}
+    {% include 'a17t/includes/label.html' %}
+    <div class="select {% if field.errors|length > 0 %}~critical{% endif %} my-1">
+        {{field}}
+    </div>
+    {% else %}
+    {% include 'a17t/includes/label.html' %}
+    {{field|add_class:"field my-1"}}
+    {% endif %}
+
+    {% for error in field.errors %}
+    <p class="support ~critical">{{ error }}</p>
+    {% endfor %}
+    {% if field.help_text %}
+    <p class="support">{{field.help_text|safe}}</p>
+    {% endif %}
+</field>
