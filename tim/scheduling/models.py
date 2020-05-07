@@ -5,6 +5,8 @@ from datetime import time
 from django.db import models
 from django.utils.timezone import datetime, now, timedelta
 from pytz import timezone
+from django.shortcuts import reverse
+from django.conf import settings
 
 from accounts.models import User
 
@@ -152,11 +154,11 @@ class Event(models.Model):
     scheduled = models.DateTimeField(null=True, blank=True)
 
     # Core information (provided by source)
-    content = models.TextField(blank=True, default="")
-    inception = models.DateTimeField(null=True, blank=True)
+    content = models.TextField(blank=True, default="", db_index=True)
+    inception = models.DateTimeField(null=True, blank=True, db_index=True)
     deadline = models.DateTimeField(null=True, blank=True)
     duration = models.IntegerField(null=True, blank=True)  # seconds
-    completed = models.BooleanField(default=False)
+    completed = models.BooleanField(default=False, db_index=True)
     flags = models.TextField(blank=True)
     contexts = models.TextField(blank=True)
 
@@ -166,6 +168,13 @@ class Event(models.Model):
     source_url = models.URLField(blank=True)
     recurrence_id = models.TextField(blank=True)
     source_metadata = models.TextField(default="{}")
+
+    class Meta:
+        ordering = ["-scheduled"]
+        indexes = [
+            models.Index(fields=['schedule', '-scheduled']),
+            models.Index(fields=['schedule', '-inception']),
+        ]
 
     def __str__(self):
         return f"{str(self.uuid)[:6]}: {self.content}"
@@ -220,10 +229,13 @@ class Event(models.Model):
                     + self.schedule.get_reschedule_delay()
                 )
             )
-            desc += f"This event is currently ongoing. It will not be rescheduled unless it remains incomplete at {reschedule_after.strftime('%-I:%M %p')}."
+            desc += f"This event is currently ongoing. It will not be rescheduled unless it remains incomplete at {reschedule_after.strftime('%-I:%M %p')}.\n\n"
 
         if self.completed:
-            desc += f"This event is complete. These links may expire."
+            desc += f"This event is complete. These links may expire.\n\n"
+
+        if self.schedule.user.is_superuser:
+            desc += f"View or edit this event at {settings.URL_PREFIX}{reverse('admin:scheduling_event_change', kwargs={'object_id': self.pk})}\n\n"
 
         return desc.strip()
 

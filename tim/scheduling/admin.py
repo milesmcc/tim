@@ -1,9 +1,11 @@
 from django.contrib import admin
 
 from . import models, tasks
+from django.shortcuts import redirect
 
 
 class EventAdmin(admin.ModelAdmin):
+    change_form_template = "scheduling/admin/event_change_form.html"
     list_display = [
         "schedule",
         "created",
@@ -20,6 +22,15 @@ class EventAdmin(admin.ModelAdmin):
     list_filter = ["completed", "scheduled"]
 
 
+    def response_change(self, request, obj):
+        if "_reschedule" in request.POST:
+            obj.scheduled = None
+            obj.save()
+            self.message_user(request, "This event has been rescheduled.")
+            return redirect(".")
+        return super().response_change(request, obj)
+
+
 admin.site.register(models.Event, EventAdmin)
 
 
@@ -32,11 +43,19 @@ update_schedules.short_description = "Update & process schedules"
 
 
 class ScheduleAdmin(admin.ModelAdmin):
+    change_form_template = "scheduling/admin/schedule_change_form.html"
     actions = [update_schedules]
     list_display = ["pk", "user", "rescheduling_behavior", "default_timezone"]
     list_display_links = ["pk"]
     search_fields = ["user", "rescheduling_behavior", "default_timezone"]
     list_filter = ["rescheduling_behavior"]
+
+    def response_change(self, request, obj):
+        if "_update" in request.POST:
+            tasks.update_schedule.delay(obj.pk)
+            self.message_user(request, "This schedule will be recalculated in the background.")
+            return redirect(".")
+        return super().response_change(request, obj)
 
 
 admin.site.register(models.Schedule, ScheduleAdmin)

@@ -15,7 +15,13 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from django.views.generic import RedirectView
+
+admin.site.site_header = "Tim Admin Portal"
+admin.site.site_title = "Tim Admin Portal"
+admin.site.index_title = "Welcome to the Tim Admin Portal"
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path("", RedirectView.as_view(pattern_name="admin:index"), name="index")
 ]

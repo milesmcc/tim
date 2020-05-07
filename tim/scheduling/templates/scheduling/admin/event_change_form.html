@@ -1,0 +1,15 @@
+{% extends 'admin/change_form.html' %}
+
+{% block submit_buttons_bottom %}
+{{ block.super }}
+<div class="submit-row">
+    <input type="submit" value="Reschedule" name="_reschedule">
+</div>
+{% endblock %}
+
+{% block object-tools-items %}
+{% if original.source_url %}
+<li><a href="{{original.source_url}}">View on {{original.source|capfirst}}</a></li>
+{% endif %}
+{{block.super}}
+{% endblock %}
