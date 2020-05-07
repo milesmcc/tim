@@ -52,6 +52,7 @@ class Schedule(models.Model):
     end_day_at = models.TimeField(default=time(hour=22))
     days_of_week = models.TextField(default="1 2 3 4 5 6 7")
     reschedule_after = models.IntegerField(default=1800)
+    shift_after_early_completion = models.BooleanField(default=True)
 
     def __str__(self):
         return f"{self.user} (#{self.pk})"

@@ -8,6 +8,7 @@ from django.utils import timezone
 from .models import Block, Event, Schedule
 from .utils import find_availability
 
+
 def _requested_time(event: Event) -> (time, time, bool):
     earliest = []
     latest = []
@@ -116,6 +117,18 @@ def build_schedule(
     ):
         if event.is_ongoing():
             blocks.extend(event.get_blocks())
+
+    if not schedule.shift_after_early_completion:
+        for event in Event.objects.filter(
+            Q(
+                schedule=schedule,
+                completed=True,
+                scheduled__gte=start - timedelta(hours=24),
+                scheduled__lt=start,
+            )
+        ):
+            if event.scheduled + (event.get_duration() or timedelta()) > start:
+                blocks.extend(event.get_blocks())
 
     events: [Event] = sorted(
         Event.objects.filter(
