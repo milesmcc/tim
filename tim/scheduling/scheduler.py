@@ -8,6 +8,25 @@ from django.utils import timezone
 from .models import Block, Event, Schedule
 from .utils import find_availability
 
+def _requested_time(event: Event) -> (time, time, bool):
+    earliest = []
+    latest = []
+    if event.has_flag("morning"):
+        earliest.append(time(hour=7))
+        latest.append(time(hour=12))
+    if event.has_flag("afternoon"):
+        earliest.append(time(hour=12))
+        latest.append(time(hour=17))
+    if event.has_flag("evening"):
+        earliest.append(time(hour=17))
+        latest.append(time(hour=22))
+    if event.has_flag("daytime"):
+        earliest.append(time(hour=7))
+        latest.append(time(hour=17))
+    if len(earliest) == 0 or len(latest) == 0:
+        return None
+    return (min(earliest), max(latest), event.has_flag("flex"))
+
 
 def _viable_at(schedule: Schedule, start: datetime, end: datetime, event: Event):
     if event.has_flag("nobox"):
@@ -16,6 +35,13 @@ def _viable_at(schedule: Schedule, start: datetime, end: datetime, event: Event)
         return False
     if event.get_duration() is not None and start + event.get_duration() > end:
         return False
+    requested_time = _requested_time(event)
+    if requested_time is not None:
+        earliest, latest, flex = requested_time
+        if not flex:
+            t = start.astimezone(tz=schedule.get_timezone()).time()
+            if t < earliest or t > latest:
+                return False
     return True
 
 
@@ -53,23 +79,11 @@ def _suitability_at(
     factors = [0]
 
     # Time suitability
-    earliest = []
-    latest = []
-    if event.has_flag("morning"):
-        earliest.append(time(hour=7))
-        latest.append(time(hour=12))
-    if event.has_flag("afternoon"):
-        earliest.append(time(hour=12))
-        latest.append(time(hour=17))
-    if event.has_flag("evening"):
-        earliest.append(time(hour=17))
-        latest.append(time(hour=22))
-    if event.has_flag("daytime"):
-        earliest.append(time(hour=7))
-        latest.append(time(hour=17))
-    if earliest != [] and latest != []:
+    requested_time = _requested_time(event)
+    if requested_time is not None:
+        earliest, latest, _ = requested_time
         t = start.astimezone(tz=schedule.get_timezone()).time()
-        if t < min(earliest) or t > max(latest):
+        if t < earliest or t > latest:
             factors.append(-10)
         else:
             factors.append(10)
