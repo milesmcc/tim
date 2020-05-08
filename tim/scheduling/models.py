@@ -180,7 +180,6 @@ class Event(models.Model):
             models.Index(fields=["schedule", "-inception"]),
         ]
 
-    @lru_cache
     def __str__(self):
         return f"{str(self.uuid)[:6]}: {self.content}"
 
@@ -209,31 +208,25 @@ class Event(models.Model):
             query = query & models.Q(completed=False)
         return list(self.schedule.event_set.filter(query))
 
-    @lru_cache
     def get_duration(self) -> timedelta:
         if self.duration is None:
             return None
         return timedelta(seconds=self.duration)
 
-    @lru_cache
     def get_flags(self) -> [str]:
         return set(self.flags.lower().split())
 
-    @lru_cache
     def has_flag(self, flag: str) -> bool:
         return flag.lower() in self.get_flags()
 
-    @lru_cache
     def get_contexts(self) -> [str]:
         return set(self.contexts.lower().split())
 
-    @lru_cache
     def get_blocks(self) -> [Block]:
         if self.duration is None or self.duration == 0 or self.scheduled is None:
             return []
         return [Block(self.scheduled, self.scheduled + self.get_duration())]
 
-    @lru_cache
     def is_overdue(self) -> bool:
         if self.scheduled is None:
             return False
@@ -242,18 +235,16 @@ class Event(models.Model):
             expected_end += self.get_duration()
         return expected_end + timedelta(seconds=self.schedule.reschedule_after) < now()
 
-    @lru_cache
     def is_ongoing(self) -> bool:
         if self.scheduled is not None:
             return now() > self.scheduled and not self.completed
         return False
 
-    @lru_cache
     def get_description(self) -> str:
         desc = (
-            f"{self.source_url}\n\n"
-            + f"Flags: {', '.join(self.get_flags())}\n"
-            + f"Contexts: {', '.join(self.get_contexts())}\n\n"
+            f"🔗 {self.source_url}\n\n"
+            + f"🚩 {', '.join(self.get_flags())}\n\n"
+            + f"🗂️ {', '.join(self.get_contexts())}\n\n"
         )
 
         if self.is_ongoing():
@@ -264,13 +255,16 @@ class Event(models.Model):
                     + self.schedule.get_reschedule_delay()
                 )
             )
-            desc += f"This event is currently ongoing. It will not be rescheduled unless it remains incomplete at {reschedule_after.strftime('%-I:%M %p')}.\n\n"
+            desc += f"⏳ This event is currently ongoing. It will not be rescheduled unless it remains incomplete at {reschedule_after.strftime('%-I:%M %p')}.\n\n"
 
         if self.completed:
-            desc += f"This event is complete. These links may expire.\n\n"
+            desc += f"✅ This event is complete. These links may expire.\n\n"
+
+        if len(progression := self.progression) != 0:
+            desc += f"📑 This event is part of the '{progression}' progression, with {len(self.get_dependencies())} dependencies and {len(self.get_dependents())} dependents.\n\n"
 
         if self.schedule.user.is_superuser:
-            desc += f"View or edit this event at {settings.URL_PREFIX}{reverse('admin:scheduling_event_change', kwargs={'object_id': self.pk})}\n\n"
+            desc += f"📡 View or edit this event at {settings.URL_PREFIX}{reverse('admin:scheduling_event_change', kwargs={'object_id': self.pk})}\n\n"
 
         return desc.strip()
 

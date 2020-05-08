@@ -51,13 +51,13 @@ def _viable_at(
         if not satisfied:
             return False
 
-    requested_time = _requested_time(event)
-    if requested_time is not None:
+    if requested_time := _requested_time(event):
         earliest, latest, flex = requested_time
         if not flex:
             t = start.astimezone(tz=schedule.get_timezone()).time()
             if t < earliest or t > latest:
                 return False
+
     return True
 
 
@@ -111,8 +111,7 @@ def _suitability_at(
     factors = [0]
 
     # Time suitability
-    requested_time = _requested_time(event)
-    if requested_time is not None:
+    if requested_time := _requested_time(event):
         earliest, latest, _ = requested_time
         t = start.astimezone(tz=schedule.get_timezone()).time()
         if t < earliest or t > latest:
