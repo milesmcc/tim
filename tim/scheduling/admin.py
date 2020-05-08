@@ -7,8 +7,8 @@ from django.shortcuts import redirect
 class EventAdmin(admin.ModelAdmin):
     change_form_template = "scheduling/admin/event_change_form.html"
     list_display = [
-        "schedule",
         "created",
+        "schedule",
         "scheduled",
         "content",
         "inception",
@@ -20,8 +20,9 @@ class EventAdmin(admin.ModelAdmin):
         "progression",
         "progression_order"
     ]
-    search_fields = ["schedule", "schedule.user", "content", "contexts", "flags"]
-    list_filter = ["completed", "scheduled"]
+    list_display_links = ["created"]
+    search_fields = ["content", "progression", "contexts", "flags"]
+    list_filter = ["completed", "scheduled", "source", "deadline"]
 
 
     def response_change(self, request, obj):
@@ -49,7 +50,7 @@ class ScheduleAdmin(admin.ModelAdmin):
     actions = [update_schedules]
     list_display = ["pk", "user", "rescheduling_behavior", "default_timezone"]
     list_display_links = ["pk"]
-    search_fields = ["user", "rescheduling_behavior", "default_timezone"]
+    search_fields = ["rescheduling_behavior", "default_timezone"]
     list_filter = ["rescheduling_behavior"]
 
     def response_change(self, request, obj):
