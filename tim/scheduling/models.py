@@ -264,7 +264,7 @@ class Event(models.Model):
             desc += f"📑 This event is part of the '{progression}' progression, with {len(self.get_dependencies())} dependencies and {len(self.get_dependents())} dependents.\n\n"
 
         if self.schedule.user.is_superuser:
-            desc += f"📡 View or edit this event at {settings.URL_PREFIX}{reverse('admin:scheduling_event_change', kwargs={'object_id': self.pk})}\n\n"
+            desc += f"📡 {settings.URL_PREFIX}{reverse('admin:scheduling_event_change', kwargs={'object_id': self.pk})}\n\n"
 
         return desc.strip()
 
