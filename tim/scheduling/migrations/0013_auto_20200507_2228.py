@@ -6,28 +6,28 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('scheduling', '0012_schedule_shift_after_early_completion'),
+        ("scheduling", "0012_schedule_shift_after_early_completion"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='event',
-            name='progression',
-            field=models.TextField(blank=True, db_index=True, default=''),
+            model_name="event",
+            name="progression",
+            field=models.TextField(blank=True, db_index=True, default=""),
         ),
         migrations.AddField(
-            model_name='event',
-            name='progression_order',
+            model_name="event",
+            name="progression_order",
             field=models.FloatField(blank=True, db_index=True, default=0.0),
         ),
         migrations.AlterField(
-            model_name='event',
-            name='contexts',
-            field=models.TextField(blank=True, default=''),
+            model_name="event",
+            name="contexts",
+            field=models.TextField(blank=True, default=""),
         ),
         migrations.AlterField(
-            model_name='event',
-            name='flags',
-            field=models.TextField(blank=True, default=''),
+            model_name="event",
+            name="flags",
+            field=models.TextField(blank=True, default=""),
         ),
     ]

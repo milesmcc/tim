@@ -1,13 +1,13 @@
 import logging
 import uuid
 from datetime import time
+from functools import lru_cache
 
+from django.conf import settings
 from django.db import models
+from django.shortcuts import reverse
 from django.utils.timezone import datetime, now, timedelta
 from pytz import timezone
-from django.shortcuts import reverse
-from django.conf import settings
-from functools import lru_cache
 
 from accounts.models import User
 
@@ -191,23 +191,23 @@ class Event(models.Model):
     def get_dependencies(self, incomplete_only=True):
         if len(self.progression.strip()) == 0:
             return []
-        query = models.Q(progression=self.progression, progression_order__lt=self.progression_order)
+        query = models.Q(
+            progression=self.progression, progression_order__lt=self.progression_order
+        )
         if incomplete_only:
             query = query & models.Q(completed=False)
-        return list(
-            self.schedule.event_set.filter(query)
-        )
+        return list(self.schedule.event_set.filter(query))
 
     @lru_cache
     def get_dependents(self, incomplete_only=True):
         if len(self.progression.strip()) == 0:
             return []
-        query = models.Q(progression=self.progression, progression_order__gt=self.progression_order)
+        query = models.Q(
+            progression=self.progression, progression_order__gt=self.progression_order
+        )
         if incomplete_only:
             query = query & models.Q(completed=False)
-        return list(
-            self.schedule.event_set.filter(query)
-        )
+        return list(self.schedule.event_set.filter(query))
 
     @lru_cache
     def get_duration(self) -> timedelta:

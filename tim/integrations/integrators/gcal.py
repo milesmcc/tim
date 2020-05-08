@@ -3,8 +3,14 @@ import logging
 import pickle
 
 from dateutil.parser import parse as parse_time
-from django.utils.timezone import (datetime, is_aware, make_aware, now,
-                                   timedelta, timezone)
+from django.utils.timezone import (
+    datetime,
+    is_aware,
+    make_aware,
+    now,
+    timedelta,
+    timezone,
+)
 from google.auth.credentials import Credentials
 from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import InstalledAppFlow

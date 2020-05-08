@@ -16,7 +16,7 @@ FLAGS = [
     "afternoon",
     "evening",
     "daytime",  # Alias for morning & afternoon
-    "flex", # Make time a suggestion, not a rule
+    "flex",  # Make time a suggestion, not a rule
     # Miscellaneous & integrations
     "deadline",
 ]

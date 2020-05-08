@@ -1,7 +1,7 @@
 from django.contrib import admin
+from django.shortcuts import redirect
 
 from . import models, tasks
-from django.shortcuts import redirect
 
 
 class EventAdmin(admin.ModelAdmin):
@@ -18,12 +18,11 @@ class EventAdmin(admin.ModelAdmin):
         "source",
         "recurrence_id",
         "progression",
-        "progression_order"
+        "progression_order",
     ]
     list_display_links = ["created"]
     search_fields = ["content", "progression", "contexts", "flags"]
     list_filter = ["completed", "scheduled", "source", "deadline"]
-
 
     def response_change(self, request, obj):
         if "_reschedule" in request.POST:
@@ -56,7 +55,9 @@ class ScheduleAdmin(admin.ModelAdmin):
     def response_change(self, request, obj):
         if "_update" in request.POST:
             tasks.update_schedule.delay(obj.pk)
-            self.message_user(request, "This schedule will be recalculated in the background.")
+            self.message_user(
+                request, "This schedule will be recalculated in the background."
+            )
             return redirect(".")
         return super().response_change(request, obj)
 

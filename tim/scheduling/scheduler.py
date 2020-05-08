@@ -29,7 +29,13 @@ def _requested_time(event: Event) -> (time, time, bool):
     return (min(earliest), max(latest), event.has_flag("flex"))
 
 
-def _viable_at(schedule: Schedule, start: datetime, end: datetime, also_scheduled: [Event], event: Event):
+def _viable_at(
+    schedule: Schedule,
+    start: datetime,
+    end: datetime,
+    also_scheduled: [Event],
+    event: Event,
+):
     if event.has_flag("nobox"):
         return False
     if event.inception is not None and event.inception > start:
@@ -55,7 +61,9 @@ def _viable_at(schedule: Schedule, start: datetime, end: datetime, also_schedule
     return True
 
 
-def _priority_at(schedule: Schedule, start: datetime, event: Event, consider_dependents=True) -> float:
+def _priority_at(
+    schedule: Schedule, start: datetime, event: Event, consider_dependents=True
+) -> float:
     # Find base priority
     priority = 1.0
     if event.has_flag("p1"):
@@ -82,8 +90,13 @@ def _priority_at(schedule: Schedule, start: datetime, event: Event, consider_dep
     # is blocking
     if consider_dependents:
         for dependent in event.get_dependents():
-            if dependent.inception is None or dependent.inception <= start: # is actually blocked
-                priority += _priority_at(schedule, start, dependent, consider_dependents=False) / 4
+            if (
+                dependent.inception is None or dependent.inception <= start
+            ):  # is actually blocked
+                priority += (
+                    _priority_at(schedule, start, dependent, consider_dependents=False)
+                    / 4
+                )
                 # This `/ 4` is somewhat arbitrary. I don't want events with dependencies
                 # to completely overpower everything else. TODO: tweak
 

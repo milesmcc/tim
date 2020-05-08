@@ -103,7 +103,7 @@ class TodoistIntegrator(Integrator):
                     ):
                         event.progression = match.group("progression")
                         event.progression_order = float(match.group("ordering"))
-                    if (duration := parse_duration(component)):
+                    if (duration := parse_duration(component)) :
                         event.duration = duration
 
             # Find flags

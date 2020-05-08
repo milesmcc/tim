@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('scheduling', '0009_auto_20200505_1418'),
+        ("scheduling", "0009_auto_20200505_1418"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='schedule',
-            name='days_of_week',
-            field=models.TextField(default='1 2 3 4 5 6 7'),
+            model_name="schedule",
+            name="days_of_week",
+            field=models.TextField(default="1 2 3 4 5 6 7"),
         ),
     ]

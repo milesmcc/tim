@@ -23,5 +23,5 @@ admin.site.index_title = "Welcome to the Tim Admin Portal"
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("", RedirectView.as_view(pattern_name="admin:index"), name="index")
+    path("", RedirectView.as_view(pattern_name="admin:index"), name="index"),
 ]
