@@ -5,8 +5,7 @@ from hashlib import sha1
 
 import requests
 from dateutil.parser import parse as parse_time
-from django.utils.timezone import (datetime, is_aware, make_aware, timedelta,
-                                   timezone)
+from django.utils.timezone import datetime, is_aware, make_aware, timedelta, timezone
 from pytimeparse import parse as parse_duration
 
 from scheduling import FLAGS
@@ -94,12 +93,18 @@ class TodoistIntegrator(Integrator):
                 else:
                     event.inception = due_date
 
-            # Find duration
-            duration_matches = re.finditer(r"\[(?P<duration>.+)\]", item["content"])
-            for match in duration_matches:
-                duration = parse_duration(match.group("duration"))
-                if duration is not None:
-                    event.duration = duration
+            # Extract Tim-specific metadata
+            metadata_matches = re.finditer(r"\[(?P<metadata>.+)\]", item["content"])
+            for match in metadata_matches:
+                for component in match.group("metadata").split(","):
+                    if match := re.match(
+                        r"(?P<progression>([\w\-])+)(\s+)?#(?P<ordering>\d+(.\d+)?)",
+                        component.strip(),
+                    ):
+                        event.progression = match.group("progression")
+                        event.progression_order = float(match.group("ordering"))
+                    if (duration := parse_duration(component)):
+                        event.duration = duration
 
             # Find flags
             event.flags = " ".join(

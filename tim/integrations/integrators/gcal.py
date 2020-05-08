@@ -144,6 +144,10 @@ class GcalIntegrator(Integrator):
                 suffix += "🟢"
             if event.has_flag("minor"):
                 suffix += "🤷"
+            if event.get_dependencies():
+                suffix += "🚧"
+            if event.get_dependents(incomplete_only=False):
+                suffix += "🛡️"
 
             body = {
                 "start": {"dateTime": event.scheduled.isoformat()},

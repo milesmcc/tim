@@ -7,6 +7,7 @@ from django.utils.timezone import datetime, now, timedelta
 from pytz import timezone
 from django.shortcuts import reverse
 from django.conf import settings
+from functools import lru_cache
 
 from accounts.models import User
 
@@ -160,8 +161,10 @@ class Event(models.Model):
     deadline = models.DateTimeField(null=True, blank=True)
     duration = models.IntegerField(null=True, blank=True)  # seconds
     completed = models.BooleanField(default=False, db_index=True)
-    flags = models.TextField(blank=True)
-    contexts = models.TextField(blank=True)
+    flags = models.TextField(blank=True, default="")
+    contexts = models.TextField(blank=True, default="")
+    progression = models.TextField(blank=True, default="", db_index=True)
+    progression_order = models.FloatField(blank=True, default=0.0, db_index=True)
 
     # Source identity data
     source = models.TextField()
@@ -173,35 +176,64 @@ class Event(models.Model):
     class Meta:
         ordering = ["-scheduled"]
         indexes = [
-            models.Index(fields=['schedule', '-scheduled']),
-            models.Index(fields=['schedule', '-inception']),
+            models.Index(fields=["schedule", "-scheduled"]),
+            models.Index(fields=["schedule", "-inception"]),
         ]
 
+    @lru_cache
     def __str__(self):
         return f"{str(self.uuid)[:6]}: {self.content}"
 
     class Meta:
         unique_together = [("schedule", "source_id")]
 
+    @lru_cache
+    def get_dependencies(self, incomplete_only=True):
+        if len(self.progression.strip()) == 0:
+            return []
+        query = models.Q(progression=self.progression, progression_order__lt=self.progression_order)
+        if incomplete_only:
+            query = query & models.Q(completed=False)
+        return list(
+            self.schedule.event_set.filter(query)
+        )
+
+    @lru_cache
+    def get_dependents(self, incomplete_only=True):
+        if len(self.progression.strip()) == 0:
+            return []
+        query = models.Q(progression=self.progression, progression_order__gt=self.progression_order)
+        if incomplete_only:
+            query = query & models.Q(completed=False)
+        return list(
+            self.schedule.event_set.filter(query)
+        )
+
+    @lru_cache
     def get_duration(self) -> timedelta:
         if self.duration is None:
             return None
         return timedelta(seconds=self.duration)
 
+    @lru_cache
     def get_flags(self) -> [str]:
         return set(self.flags.lower().split())
 
+    @lru_cache
     def has_flag(self, flag: str) -> bool:
         return flag.lower() in self.get_flags()
 
+    @lru_cache
     def get_contexts(self) -> [str]:
         return set(self.contexts.lower().split())
 
+    @lru_cache
     def get_blocks(self) -> [Block]:
         if self.duration is None or self.duration == 0 or self.scheduled is None:
             return []
         return [Block(self.scheduled, self.scheduled + self.get_duration())]
 
+    @lru_cache
     def is_overdue(self) -> bool:
         if self.scheduled is None:
             return False
@@ -210,11 +242,13 @@ class Event(models.Model):
             expected_end += self.get_duration()
         return expected_end + timedelta(seconds=self.schedule.reschedule_after) < now()
 
+    @lru_cache
     def is_ongoing(self) -> bool:
         if self.scheduled is not None:
             return now() > self.scheduled and not self.completed
         return False
 
+    @lru_cache
     def get_description(self) -> str:
         desc = (
             f"{self.source_url}\n\n"
@@ -249,6 +283,8 @@ class Event(models.Model):
             "completed",
             "flags",
             "contexts",
+            "progression",
+            "progression_order",
             "source_metadata",
             "recurrence_id",
             "source_url",

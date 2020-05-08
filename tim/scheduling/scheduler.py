@@ -29,13 +29,22 @@ def _requested_time(event: Event) -> (time, time, bool):
     return (min(earliest), max(latest), event.has_flag("flex"))
 
 
-def _viable_at(schedule: Schedule, start: datetime, end: datetime, event: Event):
+def _viable_at(schedule: Schedule, start: datetime, end: datetime, also_scheduled: [Event], event: Event):
     if event.has_flag("nobox"):
         return False
     if event.inception is not None and event.inception > start:
         return False
     if event.get_duration() is not None and start + event.get_duration() > end:
         return False
+
+    for dependency in event.get_dependencies():
+        satisfied = False
+        for other_event in also_scheduled:
+            if other_event.pk == dependency.pk and other_event.scheduled < start:
+                satisfied = True
+        if not satisfied:
+            return False
+
     requested_time = _requested_time(event)
     if requested_time is not None:
         earliest, latest, flex = requested_time
@@ -46,7 +55,7 @@ def _viable_at(schedule: Schedule, start: datetime, end: datetime, event: Event)
     return True
 
 
-def _priority_at(schedule: Schedule, start: datetime, event: Event) -> float:
+def _priority_at(schedule: Schedule, start: datetime, event: Event, consider_dependents=True) -> float:
     # Find base priority
     priority = 1.0
     if event.has_flag("p1"):
@@ -68,6 +77,15 @@ def _priority_at(schedule: Schedule, start: datetime, event: Event) -> float:
     # starting at 1 and steadily increasing as the deadline approaches
     if event.deadline is not None:
         priority *= max(1, ((event.deadline - start).days + 14) / 7.0)
+
+    # Scale priority according to the number of other events that the event
+    # is blocking
+    if consider_dependents:
+        for dependent in event.get_dependents():
+            if dependent.inception is None or dependent.inception <= start: # is actually blocked
+                priority += _priority_at(schedule, start, dependent, consider_dependents=False) / 4
+                # This `/ 4` is somewhat arbitrary. I don't want events with dependencies
+                # to completely overpower everything else. TODO: tweak
 
     logging.debug(f"Priority for event {event} on {start} is {priority}.")
 
@@ -150,7 +168,7 @@ def build_schedule(
         highest_suitability = None
         for block_start, block_end in availability:
             while block_start < block_end:
-                if _viable_at(schedule, block_start, block_end, event):
+                if _viable_at(schedule, block_start, block_end, scheduled, event):
                     suitability = _suitability_at(
                         schedule, block_start, scheduled, event
                     )
