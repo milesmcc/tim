@@ -5,7 +5,8 @@ from hashlib import sha1
 
 import requests
 from dateutil.parser import parse as parse_time
-from django.utils.timezone import datetime, is_aware, make_aware, timedelta, timezone
+from django.utils.timezone import (datetime, is_aware, make_aware, timedelta,
+                                   timezone)
 from pytimeparse import parse as parse_duration
 
 from scheduling import FLAGS

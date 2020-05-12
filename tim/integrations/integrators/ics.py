@@ -2,7 +2,8 @@ import logging
 
 import requests
 from dateutil.parser import parse as parse_time
-from django.utils.timezone import datetime, is_aware, make_aware, timedelta, timezone
+from django.utils.timezone import (datetime, is_aware, make_aware, timedelta,
+                                   timezone)
 from ics import Calendar, Event, parse
 from pytimeparse import parse as parse_duration
 
