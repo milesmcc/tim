@@ -175,6 +175,7 @@ class Event(models.Model):
 
     class Meta:
         ordering = ["-scheduled"]
+        unique_together = [("schedule", "source_id")]
         indexes = [
             models.Index(fields=["schedule", "-scheduled"]),
             models.Index(fields=["schedule", "-inception"]),
@@ -182,9 +183,6 @@ class Event(models.Model):
 
     def __str__(self):
         return f"{str(self.uuid)[:6]}: {self.content}"
-
-    class Meta:
-        unique_together = [("schedule", "source_id")]
 
     @lru_cache
     def get_dependencies(self, incomplete_only=True):
@@ -267,6 +265,29 @@ class Event(models.Model):
             desc += f"📡 {settings.URL_PREFIX}{reverse('admin:scheduling_event_change', kwargs={'object_id': self.pk})}\n\n"
 
         return desc.strip()
+
+    def get_status_string(self) -> str:
+        string = ""
+        if self.completed:
+            string += "✅"
+        if self.is_ongoing():
+            string += "⏳"
+        if self.has_flag("deadline"):
+            string += "⏰"
+        if self.has_flag("p1"):
+            string += "🔴"
+        if self.has_flag("p2"):
+            string += "🟠"
+        if self.has_flag("p3"):
+            string += "🟢"
+        if self.has_flag("minor"):
+            string += "🤷"
+        if self.get_dependencies():
+            print(event.get_dependencies())
+            string += "🚧"
+        if self.get_dependents(incomplete_only=False):
+            string += "🛡️"
+        return string
 
     def update_from(self, other):
         update_fields = [

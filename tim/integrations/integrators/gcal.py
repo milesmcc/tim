@@ -135,25 +135,7 @@ class GcalIntegrator(Integrator):
                     ).execute()
                 continue
 
-            suffix = ""
-            if event.completed:
-                suffix += "✅"
-            if event.is_ongoing():
-                suffix += "⏳"
-            if event.has_flag("deadline"):
-                suffix += "⏰"
-            if event.has_flag("p1"):
-                suffix += "🔴"
-            if event.has_flag("p2"):
-                suffix += "🟠"
-            if event.has_flag("p3"):
-                suffix += "🟢"
-            if event.has_flag("minor"):
-                suffix += "🤷"
-            if event.get_dependencies():
-                suffix += "🚧"
-            if event.get_dependents(incomplete_only=False):
-                suffix += "🛡️"
+            suffix = event.get_status_string()
 
             body = {
                 "start": {"dateTime": event.scheduled.isoformat()},

@@ -165,7 +165,7 @@ def build_schedule(
             Q(schedule=schedule, completed=False)
             & (Q(inception=None) | Q(inception__lt=end))
             & (Q(scheduled=None) | Q(scheduled__gte=start))
-        ),
+        ).order_by("created"),
         key=lambda k: _priority_at(schedule, end, k),
         reverse=True,
     )
