@@ -283,7 +283,6 @@ class Event(models.Model):
         if self.has_flag("minor"):
             string += "🤷"
         if self.get_dependencies():
-            print(event.get_dependencies())
             string += "🚧"
         if self.get_dependents(incomplete_only=False):
             string += "🛡️"
