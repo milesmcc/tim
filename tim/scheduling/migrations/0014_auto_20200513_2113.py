@@ -6,25 +6,28 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('scheduling', '0013_auto_20200507_2228'),
+        ("scheduling", "0013_auto_20200507_2228"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='event',
-            options={'ordering': ['-scheduled']},
+            name="event", options={"ordering": ["-scheduled"]},
         ),
         migrations.AddField(
-            model_name='event',
-            name='completed_at',
+            model_name="event",
+            name="completed_at",
             field=models.DateTimeField(blank=True, null=True),
         ),
         migrations.AddIndex(
-            model_name='event',
-            index=models.Index(fields=['schedule', '-scheduled'], name='scheduling__schedul_956adf_idx'),
+            model_name="event",
+            index=models.Index(
+                fields=["schedule", "-scheduled"], name="scheduling__schedul_956adf_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='event',
-            index=models.Index(fields=['schedule', '-inception'], name='scheduling__schedul_02d782_idx'),
+            model_name="event",
+            index=models.Index(
+                fields=["schedule", "-inception"], name="scheduling__schedul_02d782_idx"
+            ),
         ),
     ]

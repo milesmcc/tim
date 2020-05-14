@@ -55,7 +55,9 @@ class GcalIntegrator(Integrator):
         self.credentials = pickle.loads(base64.b64decode(authentication["token"]))
         self.credentials.refresh(Request())
         self.service = build("calendar", "v3", credentials=self.credentials)
-        self.buffer: timedelta = timedelta(minutes=int(configuration.get("buffer", "0")))
+        self.buffer: timedelta = timedelta(
+            minutes=int(configuration.get("buffer", "0"))
+        )
         self.cal_id: str = None
         self.other_cal_ids: [str] = []
         for cal in self.service.calendarList().list().execute()["items"]:
@@ -111,7 +113,11 @@ class GcalIntegrator(Integrator):
         for calendar in resp["calendars"].values():
             for block in calendar["busy"]:
                 blocks.append(
-                    Block(parse_time(block["start"]), parse_time(block["end"]), buffer=self.buffer)
+                    Block(
+                        parse_time(block["start"]),
+                        parse_time(block["end"]),
+                        buffer=self.buffer,
+                    )
                 )
         logging.debug(f"Successfully loaded {len(blocks)} busy blocks from calendar.")
         return blocks

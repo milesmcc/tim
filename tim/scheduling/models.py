@@ -211,7 +211,11 @@ class Event(models.Model):
         if self.duration is None:
             return None
         duration = timedelta(seconds=self.duration)
-        if self.completed and self.scheduled is not None and self.completed_at is not None:
+        if (
+            self.completed
+            and self.scheduled is not None
+            and self.completed_at is not None
+        ):
             if self.scheduled + duration > self.completed_at:
                 # Event was completed early; return shorter duration
                 return self.completed_at - self.scheduled
