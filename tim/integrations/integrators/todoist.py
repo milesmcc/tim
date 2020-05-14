@@ -134,10 +134,13 @@ class TodoistIntegrator(Integrator):
         return events
 
     def get_completed_events(self, after: datetime = None):
+        # `after` keyword arg not yet implemented
         events = []
         for item in self.completed:
             event = Event()
             event.completed = True
+            print(item)
+            event.completed_at = parse_time(item["completed_date"])
             self._apply_source_metadata(event, item)
             events.append(event)
         return events

@@ -161,6 +161,7 @@ class Event(models.Model):
     deadline = models.DateTimeField(null=True, blank=True)
     duration = models.IntegerField(null=True, blank=True)  # seconds
     completed = models.BooleanField(default=False, db_index=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
     flags = models.TextField(blank=True, default="")
     contexts = models.TextField(blank=True, default="")
     progression = models.TextField(blank=True, default="", db_index=True)
@@ -209,7 +210,12 @@ class Event(models.Model):
     def get_duration(self) -> timedelta:
         if self.duration is None:
             return None
-        return timedelta(seconds=self.duration)
+        duration = timedelta(seconds=self.duration)
+        if self.completed and self.scheduled is not None and self.completed_at is not None:
+            if self.scheduled + duration > self.completed_at:
+                # Event was completed early; return shorter duration
+                return self.completed_at - self.scheduled
+        return duration
 
     def get_flags(self) -> [str]:
         return set(self.flags.lower().split())
@@ -295,6 +301,7 @@ class Event(models.Model):
             "deadline",
             "duration",
             "completed",
+            "completed_at",
             "flags",
             "contexts",
             "progression",
