@@ -19,11 +19,12 @@ def _is_busy(event: Event):
 class IcsIntegrator(Integrator):
     def __init__(self, configuration: dict, authentication: dict):
         self.url = configuration["url"]
+        self.buffer: timedelta = timedelta(minutes=int(configuration.get("buffer", "0")))
         self.calendar = Calendar(requests.get(self.url).text)
 
     def get_blocks(self, after: datetime = None, until: datetime = None):
         return [
-            Block(event.begin.datetime, event.end.datetime)
+            Block(event.begin.datetime, event.end.datetime, buffer=self.buffer)
             for event in self.calendar.events
             if _is_busy(event)
             and (until is None or event.begin.datetime < until)
