@@ -77,14 +77,14 @@ def _priority_at(
     elif event.has_flag("minor"):
         priority = 0.0
 
-    # Give old tasks higher weight, up to 1 point
+    # Give old tasks higher weight, up to 2 points
     if event.inception is not None:
-        priority += min((start - event.inception).days, 28) / 28.0
+        priority += min(abs((start - event.inception).days), 14.0) / 7.0
 
     # Multiply the task's priority by a deadline coefficient,
     # starting at 1 and steadily increasing as the deadline approaches
     if event.deadline is not None:
-        priority *= max(1, ((event.deadline - start).days + 14) / 7.0)
+        priority *= max(1, ((event.deadline - start).days + 14.0) / 7.0)
 
     # Scale priority according to the number of other events that the event
     # is blocking
